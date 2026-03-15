@@ -17,53 +17,7 @@ from tqdm import tqdm
 import os
 import time
 
-# Optional scipy for extra metrics
-try:
-    from scipy.spatial.distance import canberra, braycurtis, sqeuclidean
-    SCIPY_AVAILABLE = True
-except ImportError:
-    SCIPY_AVAILABLE = False
-
-    def sqeuclidean(u, v):
-        return np.sum((np.asarray(u) - np.asarray(v)) ** 2)
-
-
-def _levenshtein_vec(u, v):
-    """Levenshtein-style distance for two 1D numeric arrays (same length).
-    Uses substitution cost = 1 if elements differ (by tolerance), else 0.
-    Insert/delete cost = 1. O(n^2) DP."""
-    n = len(u)
-    assert len(v) == n
-    tol = 1e-9
-    # dp[i][j] = edit distance between u[:i] and v[:j]
-    dp = np.zeros((n + 1, n + 1), dtype=float)
-    dp[:, 0] = np.arange(n + 1)
-    dp[0, :] = np.arange(n + 1)
-    for i in range(1, n + 1):
-        for j in range(1, n + 1):
-            sub = 0.0 if np.abs(u[i - 1] - v[j - 1]) <= tol else 1.0
-            dp[i, j] = min(
-                dp[i - 1, j] + 1,
-                dp[i, j - 1] + 1,
-                dp[i - 1, j - 1] + sub,
-            )
-    return dp[n, n]
-
-
-def _angular_distance(u, v):
-    """Angular distance based on cosine similarity: arccos(cos_sim).
-
-    This is a monotone transform of cosine distance and uses L2 normalization
-    internally, so it is effectively a normalized angular metric."""
-    u = np.asarray(u, dtype=float)
-    v = np.asarray(v, dtype=float)
-    nu = np.linalg.norm(u)
-    nv = np.linalg.norm(v)
-    if nu == 0.0 or nv == 0.0:
-        return np.pi  # maximal angle if one vector is zero
-    cos_sim = float(np.dot(u, v) / (nu * nv))
-    cos_sim = np.clip(cos_sim, -1.0, 1.0)
-    return float(np.arccos(cos_sim))
+from distance_metrics import METRIC_NAMES, get_metric_config
 
 
 def load_and_prepare(data_path: str, test_path: str = None):
@@ -107,42 +61,6 @@ def load_and_prepare(data_path: str, test_path: str = None):
     n_features = X.shape[1]
     n_samples = X.shape[0]
     return X, y, X_test, y_test, n_features, n_samples, le
-
-
-def get_metric_config(metric_name: str):
-    """Return (metric, metric_params, algorithm) for KNeighborsClassifier.
-    metric can be string or callable."""
-    cfg = {
-        "euclidean": ("euclidean", {}, "auto"),
-        "manhattan": ("manhattan", {}, "auto"),
-        "hamming": ("hamming", {}, "auto"),
-        "cosine": ("cosine", {}, "auto"),
-        "correlation": ("correlation", {}, "auto"),
-        "angular": (_angular_distance, {}, "brute"),
-        "chebyshev": ("chebyshev", {}, "auto"),
-        "squared_euclidean": (sqeuclidean, {}, "brute"),
-        "canberra": ("canberra", {}, "auto"),
-        "braycurtis": ("braycurtis", {}, "auto"),
-        "levenshtein": (_levenshtein_vec, {}, "brute"),
-        "mahalanobis": ("mahalanobis", {}, "brute"),  # VI set per fold
-    }
-    return cfg.get(metric_name.lower(), (metric_name, {}, "brute"))
-
-
-METRIC_NAMES = [
-    "euclidean",
-    "manhattan",
-    "hamming",
-    "cosine",
-    "correlation",
-    "angular",
-    "chebyshev",
-    "squared_euclidean",
-    "canberra",
-    "braycurtis",
-    "levenshtein",
-    "mahalanobis",
-]
 
 
 def _build_class_distance_keys(labels, distances):

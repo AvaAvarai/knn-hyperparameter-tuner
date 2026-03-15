@@ -11,7 +11,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
 # Import metric names from the main script
-from knn_metric_search import METRIC_NAMES
+from distance_metrics import METRIC_NAMES
 
 
 def get_script_path():
@@ -24,7 +24,11 @@ class KnnSearchGUI:
         self.root = root
         self.root.title("k-NN Hyperparameter Search")
         self.root.minsize(600, 500)
-        self.root.geometry("750x600")
+        w, h = 750, 600
+        self.root.geometry(f"{w}x{h}")
+        x = (self.root.winfo_screenwidth() - w) // 2
+        y = (self.root.winfo_screenheight() - h) // 2
+        self.root.geometry(f"{w}x{h}+{max(0, x)}+{max(0, y)}")
 
         self.train_path = tk.StringVar()
         self.test_path = tk.StringVar()
