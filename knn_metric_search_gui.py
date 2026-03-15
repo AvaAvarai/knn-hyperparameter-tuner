@@ -3,6 +3,7 @@
 Tkinter GUI for k-NN hyperparameter search.
 """
 import os
+import signal
 import subprocess
 import sys
 import threading
@@ -34,6 +35,7 @@ class KnnSearchGUI:
         self.process = None
 
         self._build_ui()
+        self.root.protocol("WM_DELETE_WINDOW", self._on_closing)
 
     def _build_ui(self):
         main = ttk.Frame(self.root, padding=10)
@@ -186,14 +188,16 @@ class KnnSearchGUI:
             env = os.environ.copy()
             env["PYTHONUNBUFFERED"] = "1"
             try:
-                self.process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    bufsize=1,
-                    env=env,
-                )
+                popen_kwargs = {
+                    "stdout": subprocess.PIPE,
+                    "stderr": subprocess.STDOUT,
+                    "text": True,
+                    "bufsize": 1,
+                    "env": env,
+                }
+                if sys.platform != "win32":
+                    popen_kwargs["start_new_session"] = True
+                self.process = subprocess.Popen(cmd, **popen_kwargs)
                 for line in self.process.stdout:
                     self.root.after(0, lambda l=line: self._log(l))
                 self.process.wait()
@@ -212,6 +216,27 @@ class KnnSearchGUI:
             messagebox.showerror("Error", error)
         else:
             self._log("\nSearch completed.\n")
+
+    def _on_closing(self):
+        """Kill the search subprocess if running, then close the window."""
+        if self.running and self.process is not None:
+            try:
+                if sys.platform != "win32":
+                    os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
+                else:
+                    self.process.terminate()
+                self.process.wait(timeout=3)
+            except (ProcessLookupError, OSError, subprocess.TimeoutExpired):
+                try:
+                    if sys.platform != "win32":
+                        os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                    else:
+                        self.process.kill()
+                except (ProcessLookupError, OSError):
+                    pass
+            self.process = None
+            self.running = False
+        self.root.destroy()
 
 
 def main():
