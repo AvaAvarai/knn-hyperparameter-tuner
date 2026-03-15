@@ -310,11 +310,35 @@ def main():
 
     out_dir = "results"
     os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, "knn_metric_search_results.csv")
-    with open(out_path, "w") as f:
-        f.write("k,metric,accuracy_test,time_seconds\n")
+
+    # Top 1% by accuracy (descending), then full results
+    valid_sorted = sorted(valid, key=lambda x: x[2], reverse=True)
+    n_top = max(1, int(len(valid_sorted) * 0.01))
+    top_results = valid_sorted[:n_top]
+
+    try:
+        from openpyxl import Workbook
+        out_path = os.path.join(out_dir, "knn_metric_search_results.xlsx")
+        wb = Workbook()
+        ws_top = wb.active
+        ws_top.title = "Top 1%"
+        ws_top.append(["k", "metric", "accuracy_test", "time_seconds"])
+        for k, m, a, t in top_results:
+            ws_top.append([k, m, a, t])
+        ws_full = wb.create_sheet("Full Results")
+        ws_full.append(["k", "metric", "accuracy_test", "time_seconds"])
         for k, metric, acc, elapsed in all_results:
-            f.write(f"{k},{metric},{acc:.6f},{elapsed:.4f}\n")
+            ws_full.append([k, metric, acc, elapsed])
+        wb.save(out_path)
+    except ImportError:
+        out_path = os.path.join(out_dir, "knn_metric_search_results.csv")
+        with open(out_path, "w") as f:
+            f.write("# Top 1%\nk,metric,accuracy_test,time_seconds\n")
+            for k, m, a, t in top_results:
+                f.write(f"{k},{m},{a:.6f},{t:.4f}\n")
+            f.write("\n# Full Results\nk,metric,accuracy_test,time_seconds\n")
+            for k, metric, acc, elapsed in all_results:
+                f.write(f"{k},{metric},{acc:.6f},{elapsed:.4f}\n")
     print(f"Results written to {out_path}")
 
 
