@@ -2,6 +2,14 @@
 
 K-Nearest Neighbors (k-NN or KNN) is a machine learning algorithm that is supervised and non-parametric used for classification and regression for statistical inference. It requires a dataset of labelled datapoints of any dimensionality and hyperparameters. It is a lazy learning algorithm which does not build a model or representation to decide inferences but rather requires appropriate hyperparameters to define algorithm behavior of k-value, distance metric, and weighting scheme. This project searches for performant k-NN hyperparameter values. This requires a testing dataset and a k-value for k-fold cross validation (CV) or an additional test dataset. Once the hyperparameters are known then k-NN can run inference on any data any number of times immediately.
 
+## Run Commands
+
+_The command`python` refers to the system Python or aliases._
+
++ CLI: `python knn_metric_search.py --data train.csv --test-data test.csv`
++ GUI: `python knn_metric_search_gui.py`
++ Module: `python -m knn_tuner.search --data train.csv --test-data test.csv`
+
 ## k-NN Hyperparameters
 
 + k-NN k-value: an integer between 1 and the number of total datapoints
@@ -19,6 +27,20 @@ K-Nearest Neighbors (k-NN or KNN) is a machine learning algorithm that is superv
 + Implement k-fold cross validation
 + Search for weighting method
 + Replace brute force search with random search
+
+## Project Structure
+
+The project is organized into the following hierarchical folder structure:
+
+```plaintext
+knn-hyperparameter-tuner/
+├── knn_tuner/                # Core package
+│   ├── distance_metrics.py   # Distance metric formulae
+│   └── search.py             # Grid search logic
+├── knn_metric_search.py      # CLI entry point
+├── knn_metric_search_gui.py  # Tkinter GUI
+└── requirements.txt
+```
 
 ## License
 

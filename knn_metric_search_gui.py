@@ -10,13 +10,7 @@ import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 
-# Import metric names from the main script
-from distance_metrics import METRIC_NAMES
-
-
-def get_script_path():
-    """Return path to knn_metric_search.py in the same directory as this script."""
-    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "knn_metric_search.py")
+from knn_tuner import METRIC_NAMES
 
 
 class KnnSearchGUI:
@@ -172,10 +166,9 @@ class KnnSearchGUI:
         k_values = ",".join(str(k) for k in range(k_min, k_max + 1))
         metrics_str = ",".join(selected)
 
-        script_path = get_script_path()
         cmd = [
             sys.executable,
-            script_path,
+            "-m", "knn_tuner.search",
             "--data", train,
             "--test-data", test,
             "--k-values", k_values,
